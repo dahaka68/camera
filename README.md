@@ -31,7 +31,7 @@
 ![Screen18](https://github.com/dahaka68/camera/blob/master/Screenshots/Screenshot_20180516-102744.png)
 
 ## Video
- [youtube.com]()
+ [youtube.com](https://youtu.be/QNYuKRDagD0)
 
 ## Developer
 #### Rusak Sergey
