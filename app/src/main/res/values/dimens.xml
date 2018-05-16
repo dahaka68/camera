@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="toolbar_size">56dp</dimen>
+    <dimen name="toolbar_button_size">40dp</dimen>
+    <dimen name="scrollbar_size">4dp</dimen>
+    <dimen name="fab_size">16dp</dimen>
+</resources>

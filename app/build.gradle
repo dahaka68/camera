@@ -1,0 +1,67 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply plugin: 'io.fabric'
+android {
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId "com.example.dahaka.mycam"
+        minSdkVersion 16
+        targetSdkVersion 27
+        versionCode 4
+        versionName "1.0.3"
+        resConfigs "en", "ru"
+        ext.betaDistributionGroupAliases = "beta-android"
+        ext.betaDistributionReleaseNotesFilePath = "beta_release_notes.txt"
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            useProguard true
+            shrinkResources true
+            debuggable false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation "com.android.support:design:27.1.1"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+
+    //Vision
+    implementation 'com.google.android.gms:play-services-vision:15.0.2'
+
+    //Crashlytics
+    implementation('com.crashlytics.sdk.android:crashlytics:2.9.2@aar') {
+        transitive = true
+    }
+
+    // DI
+    implementation "org.koin:koin-android-architecture:0.9.1"
+
+    //Imageloader
+    implementation 'com.github.bumptech.glide:glide:4.7.1'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.7.1'
+    implementation("com.github.bumptech.glide:recyclerview-integration:4.7.1") {
+        // Excludes the support library because it's already included by Glide.
+        transitive = false
+    }
+
+    // ViewModel and LiveData
+    implementation "android.arch.lifecycle:extensions:1.1.1"
+    annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
+
+    //CustomTabs
+    implementation "com.android.support:customtabs:27.1.1"
+
+    //Firebase
+    implementation 'com.google.firebase:firebase-core:15.0.2'
+}
+apply plugin: 'com.google.gms.google-services'

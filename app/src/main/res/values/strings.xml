@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">MyCam</string>
+    <string name="picture" translatable="false">Picture</string>
+    <string name="description_info" translatable="false">Info</string>
+    <string name="flash" translatable="false">flash</string>
+    <string name="preview_image" translatable="false">preview_image</string>
+    <string name="more">find</string>
+    <string name="yes">YES</string>
+    <string name="no">NO</string>
+    <string name="low_storage_error">Face detector dependencies cannot be downloaded due to low device storage</string>
+    <string name="flash_container" translatable="false">flash_container</string>
+    <string name="delete_photo">Do you want to delete the photo?</string>
+    <string name="choose_app">Choose an app</string>
+    <string name="face_detection_error">FACE DETECTION NOT AVAILABLE</string>
+    <string name="zoom_message">Pinch/Stretch to zoom</string>
+    <string name="jpg_type" translatable="false">image/jpg</string>
+    <string name="camera_permission_required">CAMERA PERMISSION REQUIRED</string>
+    <string name="storage_permission_required">STORAGE PERMISSION REQUIRED</string>
+    <string name="delete" translatable="false">delete</string>
+    <string name="gallery" translatable="false">gallery</string>
+    <string name="no_photo">no photo</string>
+</resources>

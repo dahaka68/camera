@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MyCam</string>
+    <string name="more">найти</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="low_storage_error">Зависимости от детектора лица не могут быть загружены из-за низкого уровня памяти</string>
+    <string name="delete_photo">Вы хотите удалить фото?</string>
+    <string name="choose_app">Выберите приложение</string>
+    <string name="face_detection_error">ОБНАРУЖЕНИЕ ЛИЦА НЕ ДОСТУПНО</string>
+    <string name="zoom_message">Используйте зум</string>
+    <string name="camera_permission_required">ТРЕБУЕТСЯ РАЗРЕШЕНИЕ КАМЕРЫ</string>
+    <string name="storage_permission_required">ТРЕБУЕТСЯ РАЗРЕШЕНИЕ ДЛЯ ЗАПИСИ НА УСТРОЙСТВО</string>
+    <string name="no_photo">нет фотографий</string>
+</resources>
