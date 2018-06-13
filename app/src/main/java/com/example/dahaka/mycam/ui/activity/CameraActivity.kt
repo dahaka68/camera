@@ -38,7 +38,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private val graphicOverlay: GraphicOverlay<GraphicOverlay.Graphic> by lazy {
         findViewById<GraphicOverlay<GraphicOverlay.Graphic>>(R.id.face_overlay)
     }
-    private lateinit var listener: OrientationEventListener
     private var path: String = ""
     private var wasActivityResumed = false
     private var useCamera2api = false
@@ -47,6 +46,14 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private val changeTransform = ChangeTransform().apply {
         duration = 200
         interpolator = AccelerateInterpolator()
+    }
+
+    private val listener by lazy {
+        object : OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
+            override fun onOrientationChanged(orientation: Int) {
+                cameraViewModel.rotateButtons(orientation)
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,19 +90,19 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             }
         })
         cameraViewModel.getButtonsOrientations().observe(this, Observer { value ->
-            if (value != null) {
-                if (useCamera2api) {
-                    TransitionManager.beginDelayedTransition(control, changeTransform)
-                }
-                rotateInterface(value)
+            if (useCamera2api) {
+                TransitionManager.beginDelayedTransition(control, changeTransform)
             }
+            value?.let { rotateInterface(value) }
         })
         cameraViewModel.onPictureTaken().observe(this, Observer { _ ->
             takePicture()
         })
         cameraLauncher.getFilePath().observe(this, Observer { path ->
-            this.path = path ?: ""
-            setPreview(path ?: "")
+            path?.let {
+                this.path = path
+                setPreview(path)
+            }
         })
         findViewById<ImageView>(R.id.picture).setOnClickListener(this)
         findViewById<View>(R.id.rotateContainer).setOnClickListener(this)
@@ -180,11 +187,6 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onResume() {
         super.onResume()
-        listener = object : OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
-            override fun onOrientationChanged(orientation: Int) {
-                cameraViewModel.rotateButtons(orientation)
-            }
-        }
         if (listener.canDetectOrientation()) {
             Log.v(TAG, "Can detect orientation")
             listener.enable()

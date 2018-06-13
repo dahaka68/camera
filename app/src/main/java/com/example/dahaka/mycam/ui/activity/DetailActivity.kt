@@ -94,10 +94,8 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
         val f = File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), APP_NAME)
         val file = f.listFiles()
-        if (file != null) {
             file.sortByDescending { it }
             file.forEach { list.add(it.path) }
-        }
         return list
     }
 

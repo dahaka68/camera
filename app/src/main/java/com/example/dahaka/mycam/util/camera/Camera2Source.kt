@@ -234,12 +234,6 @@ class Camera2Source(val context: Context) : CameraDataSource {
             texture.setDefaultBufferSize(previewSize.width, previewSize.height)
             // This is the output Surface we need to start preview.
             val surface = Surface(texture)
-            // We set up a CaptureRequest.Builder with the output Surface.
-//            if (cameraDevice != null) {
-//                previewRequestBuilder = cameraDevice!!.createCaptureRequest(
-//                        CameraDevice.TEMPLATE_PREVIEW
-//                )
-//            }
             previewRequestBuilder?.addTarget(surface)
             cameraDevice?.createCaptureSession(Arrays.asList(surface, imageReader?.surface),
                     object : CameraCaptureSession.StateCallback() {
