@@ -28,7 +28,11 @@ class Camera2Source(val context: Context) : CameraDataSource {
     private val cameraOpenCloseLock = Semaphore(1)
     private val cameraThread = CameraThread()
     private lateinit var textureView: AutoFitTextureView
-    private lateinit var previewRequestBuilder: CaptureRequest.Builder
+    private val previewRequestBuilder by lazy {
+        cameraDevice?.createCaptureRequest(
+                CameraDevice.TEMPLATE_PREVIEW
+        )
+    }
     private lateinit var previewRequest: CaptureRequest
     private lateinit var characteristics: CameraCharacteristics
     private var cameraId = "0"
@@ -162,7 +166,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
                 previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
                         rotatedPreviewWidth, rotatedPreviewHeight,
                         maxPreviewWidth, maxPreviewHeight,
-                        largest)
+                        largest) ?: Size(1024, 768)
                 if (displayOrientation == Configuration.ORIENTATION_LANDSCAPE) {
                     textureView.setAspectRatio(previewSize.width, previewSize.height)
                 } else {
@@ -231,12 +235,12 @@ class Camera2Source(val context: Context) : CameraDataSource {
             // This is the output Surface we need to start preview.
             val surface = Surface(texture)
             // We set up a CaptureRequest.Builder with the output Surface.
-            if (cameraDevice != null) {
-                previewRequestBuilder = cameraDevice!!.createCaptureRequest(
-                        CameraDevice.TEMPLATE_PREVIEW
-                )
-            }
-            previewRequestBuilder.addTarget(surface)
+//            if (cameraDevice != null) {
+//                previewRequestBuilder = cameraDevice!!.createCaptureRequest(
+//                        CameraDevice.TEMPLATE_PREVIEW
+//                )
+//            }
+            previewRequestBuilder?.addTarget(surface)
             cameraDevice?.createCaptureSession(Arrays.asList(surface, imageReader?.surface),
                     object : CameraCaptureSession.StateCallback() {
                         override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
@@ -244,10 +248,10 @@ class Camera2Source(val context: Context) : CameraDataSource {
                             // When the session is ready, we start displaying the preview.
                             captureSession = cameraCaptureSession
                             try {
-                                previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                                previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                                 setFlash(previewRequestBuilder, flashMode)
-                                previewRequest = previewRequestBuilder.build()
+                                previewRequest = previewRequestBuilder?.build()!!
                                 captureSession?.setRepeatingRequest(previewRequest,
                                         captureCallback, cameraThread.backgroundHandler)
                             } catch (e: CameraAccessException) {
@@ -288,9 +292,9 @@ class Camera2Source(val context: Context) : CameraDataSource {
 
     private fun lockFocus() {
         try {
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
+            previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
             state = STATE_WAITING_LOCK
-            captureSession?.capture(previewRequestBuilder.build(), captureCallback, cameraThread.backgroundHandler)
+            captureSession?.capture(previewRequestBuilder?.build(), captureCallback, cameraThread.backgroundHandler)
         } catch (e: CameraAccessException) {
             Log.e(TAG, e.toString())
         }
@@ -299,10 +303,10 @@ class Camera2Source(val context: Context) : CameraDataSource {
     fun runPreCaptureSequence() {
         try {
             // This is how to tell the camera to trigger.
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+            previewRequestBuilder?.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
             state = STATE_WAITING_PRE_CAPTURE
-            captureSession?.capture(previewRequestBuilder.build(), captureCallback,
+            captureSession?.capture(previewRequestBuilder?.build(), captureCallback,
                     cameraThread.backgroundHandler)
         } catch (e: CameraAccessException) {
             Log.e(TAG, e.toString())
@@ -319,28 +323,28 @@ class Camera2Source(val context: Context) : CameraDataSource {
                 set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
             }?.also { setFlash(it, flashMode) }
             captureSession?.apply {
-                abortCaptures()
                 capture(captureBuilder?.build(), null, null)
-                unlockFocus()
+                abortCaptures()
             }
+            unlockFocus()
         } catch (e: CameraAccessException) {
             Log.e(TAG, e.toString())
         }
     }
 
-    private fun setFlash(requestBuilder: CaptureRequest.Builder, flashMode: String) {
+    private fun setFlash(requestBuilder: CaptureRequest.Builder?, flashMode: String) {
         if (flashSupported) {
             when (flashMode) {
                 FLASH_MODE_OFF -> {
-                    requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
                             CaptureRequest.CONTROL_AE_MODE_OFF)
                 }
                 FLASH_MODE_AUTO -> {
-                    requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
                             CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
                 }
                 FLASH_MODE_ON -> {
-                    requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
+                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
                             CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
                 }
             }
@@ -364,10 +368,10 @@ class Camera2Source(val context: Context) : CameraDataSource {
     private fun unlockFocus() {
         try {
             // Reset the auto-focus trigger
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+            previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
             setFlash(previewRequestBuilder, flashMode)
-            captureSession?.capture(previewRequestBuilder.build(), captureCallback,
+            captureSession?.capture(previewRequestBuilder?.build(), captureCallback,
                     cameraThread.backgroundHandler)
             state = STATE_PREVIEW
             captureSession?.setRepeatingRequest(previewRequest, captureCallback,
@@ -442,7 +446,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
     }
 
     private fun chooseOptimalSize(choices: Array<Size>, textureViewWidth: Int, textureViewHeight: Int,
-                                  maxWidth: Int, maxHeight: Int, aspectRatio: Size): Size {
+                                  maxWidth: Int, maxHeight: Int, aspectRatio: Size): Size? {
         val bigEnough = ArrayList<Size>()
         val notBigEnough = ArrayList<Size>()
         val w = aspectRatio.width
@@ -458,8 +462,8 @@ class Camera2Source(val context: Context) : CameraDataSource {
             }
         }
         return when {
-            bigEnough.size > 0 -> bigEnough.minBy { it.height * it.width }!!
-            notBigEnough.size > 0 -> bigEnough.maxBy { it.height * it.width }!!
+            bigEnough.size > 0 -> bigEnough.minBy { it.height * it.width }
+            notBigEnough.size > 0 -> bigEnough.maxBy { it.height * it.width }
             else -> {
                 Log.e(TAG, "Couldn't find any suitable preview size")
                 choices[0]

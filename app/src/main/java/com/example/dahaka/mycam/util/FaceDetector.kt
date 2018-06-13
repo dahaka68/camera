@@ -42,5 +42,4 @@ class FaceDetector(val context: Context, path: String) {
     }
 
     fun getFaceImage(): Bitmap? = tempBitmap
-
 }
