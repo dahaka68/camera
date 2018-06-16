@@ -6,8 +6,8 @@ import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
 import android.os.Environment
 import android.support.v4.app.FragmentManager
-import com.example.dahaka.mycam.Router
 import com.example.dahaka.mycam.util.APP_NAME
+import com.example.dahaka.mycam.util.router.Router
 import java.io.File
 
 class GalleryViewModel(private val router: Router) : ViewModel() {

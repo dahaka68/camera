@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    tools:context=".ui.activity.GalleryActivity">
+    tools:context=".ui.gallery.GalleryActivity">
 
-    <com.example.dahaka.mycam.ui.view.GridRecyclerView
+    <com.example.dahaka.mycam.ui.camera.util.common.GridRecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

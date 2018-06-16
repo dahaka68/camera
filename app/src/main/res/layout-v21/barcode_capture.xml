@@ -7,7 +7,7 @@
     android:keepScreenOn="true"
     android:orientation="vertical">
 
-    <com.example.dahaka.mycam.util.camera.CameraSourcePreview
+    <com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview
         android:id="@+id/preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -15,12 +15,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.dahaka.mycam.ui.view.GraphicOverlay
+        <com.example.dahaka.mycam.ui.camera.util.common.GraphicOverlay
             android:id="@+id/graphicOverlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    </com.example.dahaka.mycam.util.camera.CameraSourcePreview>
+    </com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview>
 
     <ImageView
         android:id="@+id/barcodeFlash"

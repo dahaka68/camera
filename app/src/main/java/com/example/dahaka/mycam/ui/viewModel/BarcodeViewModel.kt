@@ -4,9 +4,9 @@ import android.app.Activity
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
-import com.example.dahaka.mycam.Router
 import com.example.dahaka.mycam.util.FLASH_MODE_OFF
 import com.example.dahaka.mycam.util.FLASH_MODE_TORCH
+import com.example.dahaka.mycam.util.router.Router
 
 class BarcodeViewModel(private val router: Router) : ViewModel() {
     private var flashId: String = FLASH_MODE_OFF

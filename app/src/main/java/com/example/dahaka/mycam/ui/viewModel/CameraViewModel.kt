@@ -4,7 +4,7 @@ import android.app.Activity
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
-import com.example.dahaka.mycam.Router
+import com.example.dahaka.mycam.util.router.Router
 import com.example.dahaka.mycam.util.*
 
 class CameraViewModel(private val router: Router) : ViewModel() {

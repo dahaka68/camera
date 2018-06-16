@@ -19,16 +19,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.dahaka.mycam.util.camera.CameraSourcePreview
+        <com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview
             android:id="@+id/preview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <com.example.dahaka.mycam.ui.view.GraphicOverlay
+            <com.example.dahaka.mycam.ui.camera.util.common.GraphicOverlay
                 android:id="@+id/face_overlay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
-        </com.example.dahaka.mycam.util.camera.CameraSourcePreview>
+        </com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview>
 
     </FrameLayout>
 

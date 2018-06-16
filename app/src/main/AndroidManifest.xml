@@ -36,11 +36,11 @@
             android:value="7ddfaba044775dfaefb2c361169a64191aff44df" />
 
         <activity
-            android:name=".ui.activity.CameraActivity"
+            android:name=".ui.camera.CameraActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.activity.SplashActivity"
+            android:name=".ui.SplashActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -49,13 +49,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.activity.BarcodeCaptureActivity"
+            android:name=".ui.barcode.BarcodeCaptureActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".ui.activity.GalleryActivity" />
+        <activity android:name=".ui.gallery.GalleryActivity" />
         <activity
-            android:name=".ui.activity.DetailActivity"
+            android:name=".ui.detail.DetailActivity"
             android:theme="@style/AppTheme.ActionBar.Transparent" />
-        <activity android:name=".ui.activity.FaceDetectorActivity" />
+        <activity android:name=".ui.faceDetector.FaceDetectorActivity" />
     </application>
 
 </manifest>
