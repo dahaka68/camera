@@ -20,6 +20,17 @@ import kotlinx.android.synthetic.main.activity_gallery.*
 import kotlinx.android.synthetic.main.toolbar.*
 import org.koin.android.architecture.ext.viewModel
 import java.io.File
+import android.provider.MediaStore
+import android.content.Intent
+import android.util.Log
+import com.example.dahaka.mycam.util.DATE_FORMAT
+import java.text.SimpleDateFormat
+import java.util.*
+import android.graphics.Bitmap
+
+
+
+private const val REQUEST_CODE_TAKE_PICTURE = 2
 
 class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, DeletePhotoDialogFragment.OkListener {
     private val galleryViewModel by viewModel<GalleryViewModel>()
@@ -58,8 +69,11 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
             galleryViewModel.changeSpanCount()
             toggleRotation(spanImage)
         }
-        fab.setOnClickListener { galleryViewModel.startCameraActivity(this) }
-        qrCode.setOnClickListener { galleryViewModel.startBarcodeActivity(this) }
+        fab.setOnClickListener {
+                        galleryViewModel.startCameraActivity(this)
+//            openCamera()
+        }
+//        qrCode.setOnClickListener { galleryViewModel.startBarcodeActivity(this) }
         recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -70,6 +84,32 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
                 }
             }
         })
+    }
+
+    private fun openCamera() {
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, getPathForImage())
+        startActivityForResult(cameraIntent, REQUEST_CODE_TAKE_PICTURE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val thumbnailBitmap = data?.extras?.get("data") as Bitmap
+
+        galleryViewModel.startDetailActivity(this, 0)
+    }
+
+    private fun getPathForImage(): String {
+        val mediaStorageDir = File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), APP_NAME)
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                Log.d("tag", "failed to create directory")
+            }
+        }
+        val timeStamp = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
+                .format(Date())
+        return "${mediaStorageDir.path}${File.separator}IMG_$timeStamp.jpg"
     }
 
     override fun onResume() {
@@ -125,8 +165,8 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
         val f = File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), APP_NAME)
         val file = f.listFiles()
-            file.sortByDescending { it }
-            file.forEach { list.add(it.path) }
+        file.sortByDescending { it }
+        file.forEach { list.add(it.path) }
         return list
     }
 }

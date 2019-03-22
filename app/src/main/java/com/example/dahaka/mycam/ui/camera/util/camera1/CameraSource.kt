@@ -25,26 +25,20 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
 
-class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSource {
+class CameraSource(val context: Context) : CameraDataSource {
     private val cameraLock = Any()
     private var camera: Camera? = null
     var cameraFacing = CAMERA_BACK
     private var rotation: Int = 0
     private lateinit var previewSize: Size
     private var requestedFps = 30.0f
-    private val windowManager: WindowManager by lazy { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
+    private val windowManager by lazy { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
     private var flashMode = FLASH_MODE_OFF
     private lateinit var surfaceHolder: SurfaceHolder
-    private var processingThread: Thread? = null
-    private var frameProcessor: FrameProcessingRunnable? = null
     private val bytesToByteBuffer = HashMap<ByteArray, ByteBuffer>()
     private var requestedPreviewWidth = 1024
     private var requestedPreviewHeight = 768
     private lateinit var selectedPair: SizePair
-
-    init {
-        frameProcessor = FrameProcessingRunnable(detector)
-    }
 
     override fun setFlashMode(flashMode: String) {
         this.flashMode = flashMode
@@ -68,7 +62,6 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
     override fun release() {
         synchronized(cameraLock) {
             stop()
-            frameProcessor?.release()
         }
     }
 
@@ -96,34 +89,24 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
                 } else {
                     Log.i(TAG, "Camera focus mode: focusMode is not supported on this device.")
                 }
-                parameters.setPictureSize(pictureSize.width, pictureSize.height)
-                parameters.setPreviewSize(previewSize.width, previewSize.height)
-                parameters.setPreviewFpsRange(previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-                        previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX])
-                parameters.previewFormat = ImageFormat.NV21
-                setRotation(camera, parameters, requestedCameraId)
-                if (parameters.supportedFlashModes != null) {
-                    if (parameters.supportedFlashModes.contains(flashMode)) {
-                        parameters.flashMode = flashMode
-                    } else {
-                        Log.i(TAG, "Camera flash mode: $flashMode is not supported on this device.")
-                    }
+                parameters.apply {
+                    setPictureSize(pictureSize.width, pictureSize.height)
+                    setPreviewSize(previewSize.width, previewSize.height)
+                    setPreviewFpsRange(previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
+                            previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX])
+                    previewFormat = ImageFormat.NV21
+                    setRotation(camera, this, requestedCameraId)
                 }
-                if (cameraFacing == CAMERA_BACK) {
-                    flashMode = parameters.flashMode
+                camera.apply {
+                    this.parameters = parameters
+                    addCallbackBuffer(createPreviewBuffer(previewSize))
+                    addCallbackBuffer(createPreviewBuffer(previewSize))
+                    addCallbackBuffer(createPreviewBuffer(previewSize))
+                    addCallbackBuffer(createPreviewBuffer(previewSize))
                 }
-                camera.parameters = parameters
-                camera.setPreviewCallbackWithBuffer(CameraPreviewCallback())
-                camera.addCallbackBuffer(createPreviewBuffer(previewSize))
-                camera.addCallbackBuffer(createPreviewBuffer(previewSize))
-                camera.addCallbackBuffer(createPreviewBuffer(previewSize))
-                camera.addCallbackBuffer(createPreviewBuffer(previewSize))
                 this.camera = camera
                 this.camera?.setPreviewDisplay(this.surfaceHolder)
                 this.camera?.startPreview()
-                processingThread = Thread(frameProcessor)
-                frameProcessor?.setActive(true)
-                processingThread?.start()
             } catch (e: RuntimeException) {
                 e.printStackTrace()
                 Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
@@ -137,91 +120,29 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
 
     override fun stop() {
         synchronized(cameraLock) {
-            frameProcessor?.setActive(false)
-            if (processingThread != null) {
-                try {
-                    // Wait for the thread to complete to ensure that we can't have multiple threads
-                    // executing at the same time
-                    processingThread?.join()
-                } catch (e: InterruptedException) {
-                    Log.d(TAG, "Frame processing thread interrupted on release.")
-                }
-                processingThread = null
-            }
             bytesToByteBuffer.clear()
 
-            if (camera != null) {
-                camera?.stopPreview()
-                camera?.setPreviewCallbackWithBuffer(null)
+            camera?.let {
+                it.stopPreview()
+                it.setPreviewCallbackWithBuffer(null)
                 try {
-                    camera?.setPreviewTexture(null)
+                    it.setPreviewTexture(null)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to clear camera preview: $e")
                 }
-                camera?.release()
+                it.release()
                 camera = null
             }
         }
     }
 
-    fun doZoom(scale: Float): Int {
-        synchronized(cameraLock) {
-            if (camera == null) {
-                return 0
-            }
-            val parameters = camera?.parameters
-            val maxZoom = parameters?.maxZoom ?: 0
-            var currentZoom = parameters?.zoom?.plus(1) ?: 0
-            val newZoom: Float
-            newZoom = if (scale > 1) {
-                currentZoom + scale * (maxZoom / 10)
-            } else {
-                currentZoom * scale
-            }
-            currentZoom = Math.round(newZoom) - 1
-            if (currentZoom < 0) {
-                currentZoom = 0
-            } else if (currentZoom > maxZoom) {
-                currentZoom = maxZoom
-            }
-            parameters?.zoom = currentZoom
-            camera?.parameters = parameters
-            return currentZoom
-        }
-    }
-
     override fun takePicture(picCallback: PictureCallback) {
         synchronized(cameraLock) {
-            if (camera != null) {
-                if (cameraFacing == CAMERA_BACK) {
-                    setFlash(flashMode)
-                }
+            camera?.let {
                 val doneCallback = PictureDoneCallback()
                 doneCallback.pictureCallback = picCallback
-                camera?.takePicture(null, null, null, doneCallback)
+                it.takePicture(null, null, null, doneCallback)
             }
-        }
-    }
-
-    fun setFlash(mode: String?): Boolean {
-        synchronized(cameraLock) {
-            if (camera != null && mode != null) {
-                val parameters = camera?.parameters
-                val supportedFlashModes = parameters?.supportedFlashModes
-                if (supportedFlashModes != null && supportedFlashModes.contains(mode)) {
-                    parameters.flashMode = mode
-                    if (mode == FLASH_MODE_TORCH) {
-                        parameters.flashMode = Camera.Parameters.FLASH_MODE_TORCH
-                        camera?.parameters = parameters
-                        camera?.startPreview()
-                    } else {
-                        camera?.parameters = parameters
-                    }
-                    flashMode = mode
-                    return true
-                }
-            }
-            return false
         }
     }
 
@@ -229,9 +150,9 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
         var pictureCallback: PictureCallback? = null
 
         override fun onPictureTaken(data: ByteArray, camera: Camera) {
-            if (pictureCallback != null) {
+            pictureCallback?.let {
                 val pic = BitmapFactory.decodeByteArray(data, 0, data.size)
-                pictureCallback?.onPictureTaken(pic)
+                it.onPictureTaken(pic)
             }
             synchronized(cameraLock) {
                 this@CameraSource.camera?.startPreview()
@@ -287,102 +208,13 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
         val bufferSize = Math.ceil(sizeInBits / 8.0).toInt() + 1
         val byteArray = ByteArray(bufferSize)
         val buffer = ByteBuffer.wrap(byteArray)
-        if (buffer != null) {
-            if (!buffer.hasArray() || !buffer.array()!!.contentEquals(byteArray)) {
+        buffer.array()?.let {
+            if (!it.contentEquals(byteArray)) {
                 throw IllegalStateException("Failed to create valid buffer for camera source.")
             }
         }
         bytesToByteBuffer[byteArray] = buffer
         return byteArray
-    }
-
-    private inner class CameraPreviewCallback : Camera.PreviewCallback {
-        override fun onPreviewFrame(data: ByteArray, camera: Camera) {
-            frameProcessor?.setNextFrame(data, camera)
-        }
-    }
-
-    private inner class FrameProcessingRunnable(private var detector: Detector<*>?) : Runnable {
-        private val startTimeMillis = SystemClock.elapsedRealtime()
-        // This lock guards all of the member variables below.
-        private val lock = Object()
-        private var active = true
-        private var pendingTimeMillis: Long = 0
-        private var pendingFrameId = 0
-        private var pendingFrameData: ByteBuffer? = null
-
-        internal fun release() {
-            detector?.release()
-            detector = null
-        }
-
-        internal fun setActive(active: Boolean) {
-            synchronized(lock) {
-                this.active = active
-                lock.notifyAll()
-            }
-        }
-
-        internal fun setNextFrame(data: ByteArray, camera: Camera) {
-            synchronized(lock) {
-                if (pendingFrameData != null) {
-                    camera.addCallbackBuffer(pendingFrameData?.array())
-                    pendingFrameData = null
-                }
-                if (!bytesToByteBuffer.containsKey(data)) {
-                    Log.d(TAG, "Skipping frame. Could not find ByteBuffer associated with the image data from the camera.")
-                    return
-                }
-                pendingTimeMillis = SystemClock.elapsedRealtime() - startTimeMillis
-                pendingFrameId++
-                pendingFrameData = bytesToByteBuffer[data]
-                // Notify the processor thread if it is waiting on the next frame (see below).
-                lock.notifyAll()
-            }
-        }
-
-        override fun run() {
-            var outputFrame: Frame? = null
-            var data: ByteBuffer? = null
-            while (true) {
-                synchronized(lock) {
-                    while (active && pendingFrameData == null) {
-                        try {
-                            // Wait for the next frame to be received from the camera, since we
-                            // don't have it yet.
-                            lock.wait()
-                        } catch (e: InterruptedException) {
-                            Log.d(TAG, "Frame processing loop terminated.", e)
-                            return
-                        }
-                    }
-                    if (!active) {
-                        return
-                    }
-
-                    val previewW = previewSize.width
-                    val previewH = previewSize.height
-                    if (pendingFrameData != null) {
-                        outputFrame = Frame.Builder()
-                                .setImageData(quarterNV21(pendingFrameData!!, previewW, previewH),
-                                        previewW / 4, previewH / 4, ImageFormat.NV21)
-                                .setId(pendingFrameId)
-                                .setTimestampMillis(pendingTimeMillis)
-                                .setRotation(rotation)
-                                .build()
-                    }
-                    data = pendingFrameData as ByteBuffer
-                    pendingFrameData = null
-                }
-                try {
-                    detector?.receiveFrame(outputFrame)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Exception thrown from receiver.", t)
-                } finally {
-                    camera?.addCallbackBuffer(data?.array())
-                }
-            }
-        }
     }
 
     private fun getIdForRequestedCamera(facing: Int): Int {
@@ -416,8 +248,8 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
         private var picture: Size? = null
 
         init {
-            if (pictureSize != null) {
-                picture = Size(pictureSize.width, pictureSize.height)
+            pictureSize?.let { size ->
+                picture = Size(size.width, size.height)
             }
         }
 
@@ -452,39 +284,6 @@ class CameraSource(val context: Context, detector: Detector<*>?) : CameraDataSou
             }
         }
         return validPreviewSizes
-    }
-
-    private fun quarterNV21(d: ByteBuffer, imageWidth: Int, imageHeight: Int): ByteBuffer {
-        val data = d.array()
-        val yuv = ByteArray(imageWidth / 4 * imageHeight / 4 * 3 / 2)
-        var i = 0
-        run {
-            var y = 0
-            while (y < imageHeight) {
-                var x = 0
-                while (x < imageWidth) {
-                    yuv[i] = data[y * imageWidth + x]
-                    i++
-                    x += 4
-                }
-                y += 4
-            }
-        }
-        // halve U and V color components
-        var y = 0
-        while (y < imageHeight / 2) {
-            var x = 0
-            while (x < imageWidth) {
-                yuv[i] = data[imageWidth * imageHeight + y * imageWidth + x]
-                i++
-                yuv[i] = data[imageWidth * imageHeight + y * imageWidth + (x + 1)]
-                i++
-                x += 8
-            }
-            y += 4
-        }
-        //REDUCED TO QUARTER QUALITY AND ONLY IN GRAY SCALE!
-        return ByteBuffer.wrap(yuv)
     }
 
     companion object {

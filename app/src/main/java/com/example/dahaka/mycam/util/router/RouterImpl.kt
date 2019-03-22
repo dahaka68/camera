@@ -7,7 +7,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.net.Uri
 import android.support.customtabs.CustomTabsIntent
 import com.example.dahaka.mycam.R
-import com.example.dahaka.mycam.ui.barcode.BarcodeCaptureActivity
+//import com.example.dahaka.mycam.ui.barcode.BarcodeCaptureActivity
 import com.example.dahaka.mycam.ui.camera.CameraActivity
 import com.example.dahaka.mycam.ui.detail.DetailActivity
 import com.example.dahaka.mycam.ui.faceDetector.FaceDetectorActivity
@@ -25,7 +25,7 @@ class RouterImpl(val context: Context) : Router {
     }
 
     override fun openBarcodeScreen(activity: Activity) {
-        activity.startActivity(Intent(activity, BarcodeCaptureActivity::class.java))
+//        activity.startActivity(Intent(activity, BarcodeCaptureActivity::class.java))
     }
 
     override fun openGalleryScreen(activity: Activity) {

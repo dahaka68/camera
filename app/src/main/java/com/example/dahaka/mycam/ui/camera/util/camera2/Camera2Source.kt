@@ -24,10 +24,10 @@ import java.util.concurrent.TimeUnit
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class Camera2Source(val context: Context) : CameraDataSource {
-    private val cameraManager: CameraManager by lazy { context.getSystemService(Context.CAMERA_SERVICE) as CameraManager }
-    private val windowManager: WindowManager by lazy { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
-    private val cameraOpenCloseLock = Semaphore(1)
-    private val cameraThread = CameraThread()
+    private val cameraManager by lazy { context.getSystemService(Context.CAMERA_SERVICE) as CameraManager }
+    private val windowManager by lazy { context.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
+    private val cameraOpenCloseLock by lazy { Semaphore(1) }
+    private val cameraThread by lazy { CameraThread() }
     private lateinit var textureView: AutoFitTextureView
     private val previewRequestBuilder by lazy {
         cameraDevice?.createCaptureRequest(
@@ -37,7 +37,6 @@ class Camera2Source(val context: Context) : CameraDataSource {
     private lateinit var previewRequest: CaptureRequest
     private lateinit var characteristics: CameraCharacteristics
     private var cameraId = "0"
-    private var flashMode = FLASH_MODE_AUTO
     private var captureSession: CameraCaptureSession? = null
     private var cameraDevice: CameraDevice? = null
     private var state = STATE_PREVIEW
@@ -146,9 +145,13 @@ class Camera2Source(val context: Context) : CameraDataSource {
                 characteristics = cameraManager.getCameraCharacteristics(cameraId)
                 val map = characteristics.get(
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+
+                val sizes = map.getOutputSizes(ImageFormat.JPEG)
                 val largest = Collections.max(
                         Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)),
-                        CompareSizesByArea()) ?: Size(1024, 768)
+                        CompareSizesByArea()
+//                        compareBy { it.height == it.width / 16 * 9 }
+                ) ?: Size(1920, 1080)
                 imageReader = ImageReader.newInstance(largest.width, largest.height,
                         ImageFormat.JPEG, 2).apply {
                     setOnImageAvailableListener(onImageAvailableListener, cameraThread.backgroundHandler)
@@ -164,10 +167,14 @@ class Camera2Source(val context: Context) : CameraDataSource {
                 var maxPreviewHeight = if (swappedDimensions) displaySize.x else displaySize.y
                 if (maxPreviewWidth > MAX_PREVIEW_WIDTH) maxPreviewWidth = MAX_PREVIEW_WIDTH
                 if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) maxPreviewHeight = MAX_PREVIEW_HEIGHT
-                previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
-                        rotatedPreviewWidth, rotatedPreviewHeight,
-                        maxPreviewWidth, maxPreviewHeight,
-                        largest) ?: Size(1024, 768)
+                previewSize = chooseOptimalSize(
+                        map.getOutputSizes(SurfaceTexture::class.java),
+                        rotatedPreviewWidth,
+                        rotatedPreviewHeight,
+                        maxPreviewWidth,
+                        maxPreviewHeight,
+                        largest
+                ) ?: Size(1920, 1080)
                 if (displayOrientation == Configuration.ORIENTATION_LANDSCAPE) {
                     textureView.setAspectRatio(previewSize.width, previewSize.height)
                 } else {
@@ -205,11 +212,15 @@ class Camera2Source(val context: Context) : CameraDataSource {
 
     private fun openCamera(width: Int, height: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val permission = this.let { ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) }
+            val permission = this.let {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+            }
             if (permission != PackageManager.PERMISSION_GRANTED) {
                 return
             }
-            val storagePerm = this.let { ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) }
+            val storagePerm = this.let {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
             if (storagePerm != PackageManager.PERMISSION_GRANTED) {
                 return
             }
@@ -245,8 +256,8 @@ class Camera2Source(val context: Context) : CameraDataSource {
                             try {
                                 previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                                setFlash(previewRequestBuilder, flashMode)
-                                previewRequest = previewRequestBuilder?.build()!!
+                                setFlash(previewRequestBuilder)
+                                previewRequestBuilder?.build()?.let { previewRequest = it }
                                 captureSession?.setRepeatingRequest(previewRequest,
                                         captureCallback, cameraThread.backgroundHandler)
                             } catch (e: CameraAccessException) {
@@ -316,7 +327,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
                 addTarget(imageReader?.surface)
                 set(CaptureRequest.JPEG_ORIENTATION, getJpegOrientation(characteristics, displayOrientation))
                 set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-            }?.also { setFlash(it, flashMode) }
+            }?.also { setFlash(it) }
             captureSession?.apply {
                 capture(captureBuilder?.build(), null, null)
                 abortCaptures()
@@ -327,23 +338,9 @@ class Camera2Source(val context: Context) : CameraDataSource {
         }
     }
 
-    private fun setFlash(requestBuilder: CaptureRequest.Builder?, flashMode: String) {
-        if (flashSupported) {
-            when (flashMode) {
-                FLASH_MODE_OFF -> {
-                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_OFF)
-                }
-                FLASH_MODE_AUTO -> {
-                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                }
-                FLASH_MODE_ON -> {
-                    requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
-                }
-            }
-        }
+    private fun setFlash(requestBuilder: CaptureRequest.Builder?) {
+        requestBuilder?.set(CaptureRequest.CONTROL_AE_MODE,
+                CaptureRequest.CONTROL_AE_MODE_OFF)
     }
 
     private fun getJpegOrientation(c: CameraCharacteristics, deviceOrientation: Int): Int {
@@ -365,7 +362,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
             // Reset the auto-focus trigger
             previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
-            setFlash(previewRequestBuilder, flashMode)
+            setFlash(previewRequestBuilder)
             captureSession?.capture(previewRequestBuilder?.build(), captureCallback,
                     cameraThread.backgroundHandler)
             state = STATE_PREVIEW
@@ -412,7 +409,8 @@ class Camera2Source(val context: Context) : CameraDataSource {
     @Throws(IOException::class)
     override fun start(textureView: AutoFitTextureView, displayOrientation: Int) {
         this.displayOrientation = displayOrientation
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
             if (cameraStarted) {
                 return
             }
@@ -429,7 +427,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
 
     override fun setFlashMode(flashMode: String) {
         if (flashSupported) {
-            this.flashMode = flashMode
+//            this.flashMode = flashMode
         }
     }
 
@@ -448,6 +446,7 @@ class Camera2Source(val context: Context) : CameraDataSource {
         val h = aspectRatio.height
         for (option in choices) {
             if (option.width <= maxWidth && option.height <= maxHeight &&
+//                    option.height == option.width * h / w) {
                     option.height == option.width * h / w) {
                 if (option.width >= textureViewWidth && option.height >= textureViewHeight) {
                     bigEnough.add(option)
