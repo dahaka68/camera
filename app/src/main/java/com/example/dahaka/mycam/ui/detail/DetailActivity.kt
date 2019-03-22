@@ -39,7 +39,8 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
         prepareListForAdapter()
         viewPager.adapter = adapter
         viewPager.setPageTransformer(true, DepthPageTransformer())
-        getItemPosition(filePosition, filePath)
+//        getItemPosition(filePosition, filePath)
+
         share.setOnClickListener {
             val shareIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -74,6 +75,17 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
             }
         } else {
             viewPager.currentItem = position
+        }
+    }
+
+    private fun getImage(position: Int, path: String?) {
+        if (path != null && path != "") {
+            for (file in photosList) {
+                if (file == path) {
+                    val currentItem = photosList.indexOf(file)
+                }
+
+            }
         }
     }
 

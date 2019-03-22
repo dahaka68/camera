@@ -17,7 +17,7 @@ class CameraSourcePreview
 @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0)
     : ViewGroup(context, attrs, defStyle) {
     private val surfaceView = SurfaceView(context)
-    private val autoFitTextureView = AutoFitTextureView(context)
+    private val autoFitTextureView by lazy { AutoFitTextureView(context) }
     private var usingCameraOne: Boolean = false
     private var startRequested: Boolean = false
     private var surfaceAvailable: Boolean = false

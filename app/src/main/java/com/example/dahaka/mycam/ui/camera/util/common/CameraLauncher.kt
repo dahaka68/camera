@@ -11,16 +11,11 @@ import android.media.Image
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import android.widget.Toast
-import com.example.dahaka.mycam.R
 import com.example.dahaka.mycam.ui.camera.util.camera1.CameraSource
 import com.example.dahaka.mycam.ui.camera.util.camera2.Camera2Source
 import com.example.dahaka.mycam.util.APP_NAME
 import com.example.dahaka.mycam.util.CAMERA_BACK
-import com.example.dahaka.mycam.util.CAMERA_FRONT
 import com.example.dahaka.mycam.util.DATE_FORMAT
-import com.example.dahaka.mycam.ui.camera.util.camera1.GraphicFaceTrackerFactory
-import com.google.android.gms.vision.MultiProcessor
 import com.google.android.gms.vision.face.FaceDetector
 import java.io.File
 import java.io.FileOutputStream
@@ -35,7 +30,6 @@ class CameraLauncher(val context: Context) {
     private lateinit var preview: CameraSourcePreview
     private lateinit var graphicOverlay: GraphicOverlay<GraphicOverlay.Graphic>
     private val filePathLiveData = MutableLiveData<String>()
-    private val graphicFaceTrackerFactory by lazy { GraphicFaceTrackerFactory(context, graphicOverlay) }
     lateinit var previewFaceDetector: FaceDetector
     lateinit var file: File
 
@@ -121,34 +115,6 @@ class CameraLauncher(val context: Context) {
                 matrix, true)
     }
 
-    fun createCameraSourceFront(preview: CameraSourcePreview, graphicOverlay: GraphicOverlay<GraphicOverlay.Graphic>) {
-        this.preview = preview
-        this.graphicOverlay = graphicOverlay
-        if (useCamera2api) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                cameraSource = Camera2Source(context)
-                (cameraSource as Camera2Source).setCamera(CAMERA_FRONT)
-            }
-            startCameraSource(preview, graphicOverlay)
-        } else {
-            previewFaceDetector = FaceDetector.Builder(context)
-                    .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-                    .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-                    .setMode(FaceDetector.FAST_MODE)
-                    .setProminentFaceOnly(true)
-                    .setTrackingEnabled(true)
-                    .build()
-            if (previewFaceDetector.isOperational) {
-                previewFaceDetector.setProcessor(MultiProcessor.Builder(graphicFaceTrackerFactory).build())
-            } else {
-                Toast.makeText(context, context.getString(R.string.face_detection_error), Toast.LENGTH_SHORT).show()
-            }
-            cameraSource = CameraSource(context, previewFaceDetector)
-            (cameraSource as CameraSource).setCamera(CAMERA_FRONT)
-            startCameraSource(preview, graphicOverlay)
-        }
-    }
-
     fun createCameraSourceBack(preview: CameraSourcePreview, graphicOverlay: GraphicOverlay<GraphicOverlay.Graphic>) {
         this.preview = preview
         this.graphicOverlay = graphicOverlay
@@ -159,20 +125,7 @@ class CameraLauncher(val context: Context) {
             }
             startCameraSource(preview, graphicOverlay)
         } else {
-            previewFaceDetector = FaceDetector.Builder(context)
-                    .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-                    .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-                    .setMode(FaceDetector.FAST_MODE)
-                    .setProminentFaceOnly(true)
-                    .setTrackingEnabled(false)
-                    .build()
-            if (previewFaceDetector.isOperational) {
-                previewFaceDetector.setProcessor(MultiProcessor.Builder(graphicFaceTrackerFactory).build())
-
-            } else {
-                Toast.makeText(context, context.getString(R.string.face_detection_error), Toast.LENGTH_SHORT).show()
-            }
-            cameraSource = CameraSource(context, previewFaceDetector)
+            cameraSource = CameraSource(context)
             (cameraSource as CameraSource).setCamera(CAMERA_BACK)
             startCameraSource(preview, graphicOverlay)
         }
@@ -191,13 +144,9 @@ class CameraLauncher(val context: Context) {
         preview.stop()
     }
 
-    fun wasResumed(usingBackCamera: Boolean) {
+    fun wasResumed() {
         if (useCamera2api) {
-            if (usingBackCamera) {
-                createCameraSourceBack(preview, graphicOverlay)
-            } else {
-                createCameraSourceFront(preview, graphicOverlay)
-            }
+            createCameraSourceBack(preview, graphicOverlay)
         } else {
             startCameraSource(preview, graphicOverlay)
         }

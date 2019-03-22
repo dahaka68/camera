@@ -18,13 +18,10 @@ import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.dahaka.mycam.R
-import com.example.dahaka.mycam.ui.camera.util.common.GraphicOverlay
-import com.example.dahaka.mycam.ui.viewModel.CameraViewModel
-import com.example.dahaka.mycam.util.CAMERA1
-import com.example.dahaka.mycam.util.FLASH_MODE_AUTO
-import com.example.dahaka.mycam.util.FLASH_MODE_ON
 import com.example.dahaka.mycam.ui.camera.util.common.CameraLauncher
 import com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview
+import com.example.dahaka.mycam.ui.camera.util.common.GraphicOverlay
+import com.example.dahaka.mycam.ui.viewModel.CameraViewModel
 import kotlinx.android.synthetic.main.activity_camera.*
 import org.koin.android.architecture.ext.viewModel
 import org.koin.android.ext.android.inject
@@ -64,29 +61,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         } else {
             setContentView(R.layout.activity_camera)
         }
-        cameraViewModel.getCameraId().observe(this, Observer { camera ->
-            usingBackCamera = if (camera == CAMERA1) {
-                flashContainer.visibility = View.VISIBLE
-                cameraFlash.visibility = View.VISIBLE
-                cameraLauncher.stopCameraSource()
-                cameraLauncher.createCameraSourceBack(preview, graphicOverlay)
-                true
-            } else {
-                flashContainer.visibility = View.GONE
-                cameraFlash.visibility = View.GONE
-                cameraLauncher.stopCameraSource()
-                cameraLauncher.createCameraSourceFront(preview, graphicOverlay)
-                false
-            }
-        })
-        cameraViewModel.getFlashId().observe(this, Observer { flash ->
-            if (usingBackCamera) {
-                cameraLauncher.setFlash(flash)
-            }
-            when (flash) {
-                FLASH_MODE_ON -> cameraFlash.setImageResource(R.drawable.ic_camera_flash)
-                FLASH_MODE_AUTO -> cameraFlash.setImageResource(R.drawable.ic_automatic_flash)
-                else -> cameraFlash.setImageResource(R.drawable.ic_flash_off)
+        cameraViewModel.getCameraId().observe(this, Observer {
+            usingBackCamera = true
+            cameraLauncher.apply {
+                stopCameraSource()
+                createCameraSourceBack(preview, graphicOverlay)
             }
         })
         cameraViewModel.getButtonsOrientations().observe(this, Observer { value ->
@@ -95,18 +74,20 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             }
             value?.let { rotateInterface(value) }
         })
-        cameraViewModel.onPictureTaken().observe(this, Observer { _ ->
+        cameraViewModel.onPictureTaken().observe(this, Observer {
             takePicture()
         })
         cameraLauncher.getFilePath().observe(this, Observer { path ->
             path?.let {
                 this.path = path
                 setPreview(path)
+                if (path.isNotEmpty()) {
+                    cameraViewModel.startDetailScreen(this, path)
+                }
             }
         })
         findViewById<ImageView>(R.id.picture).setOnClickListener(this)
         findViewById<View>(R.id.rotateContainer).setOnClickListener(this)
-        findViewById<View>(R.id.flashContainer).setOnClickListener(this)
         findViewById<ImageView>(R.id.gallery).setOnClickListener(this)
         findViewById<ImageView>(R.id.imagePreview).setOnClickListener(this)
         useCamera2api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
@@ -159,9 +140,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun rotateIcons(deg: Float) {
         galleryIcon.rotation = deg
-        rotateCamera.rotation = deg
         imagePreview.rotation = deg
-        cameraFlash.rotation = deg
     }
 
     override fun onClick(v: View?) {
@@ -195,7 +174,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
             listener.disable()
         }
         if (wasActivityResumed) {
-            cameraLauncher.wasResumed(usingBackCamera)
+            cameraLauncher.wasResumed()
         }
     }
 
