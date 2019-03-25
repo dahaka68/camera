@@ -1,6 +1,7 @@
 package com.example.dahaka.mycam.ui.detail
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -8,20 +9,33 @@ import android.os.Environment
 import android.support.annotation.RequiresApi
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
+import android.text.TextUtils
 import android.view.View
 import android.view.WindowManager
 import com.example.dahaka.mycam.R
+import com.example.dahaka.mycam.api.UserMerchantService
+import com.example.dahaka.mycam.ui.ImageRequest
 import com.example.dahaka.mycam.ui.adapter.ImagePagerAdapter
 import com.example.dahaka.mycam.ui.fragment.DeletePhotoDialogFragment
 import com.example.dahaka.mycam.ui.viewModel.DetailViewModel
 import com.example.dahaka.mycam.util.APP_NAME
 import com.example.dahaka.mycam.util.DepthPageTransformer
+import com.example.dahaka.mycam.util.toast
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_detail.*
 import kotlinx.android.synthetic.main.detail_activity_toolbar.*
-import org.koin.android.architecture.ext.viewModel
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 import java.io.File
 
+private const val IMAGE_JPEG = "image/jpeg"
+
 class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener {
+    private val userMerchantService: UserMerchantService by inject()
+
     private val viewPager by lazy { findViewById<ViewPager>(R.id.viewpager) }
     private val adapter by lazy { ImagePagerAdapter(this, photosList) }
     private val detailViewModel by viewModel<DetailViewModel>()
@@ -29,6 +43,7 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
     private val filePosition by lazy { intent.getIntExtra(FILE_POSITION, 0) }
     private val filePath by lazy { intent.getStringExtra(FILE_PATH) }
     private var viewPagerPosition = 0
+    private lateinit var file: File
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,11 +51,11 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             setStatusBarTranslucent(true)
         }
-        prepareListForAdapter()
+//        prepareListForAdapter()
         viewPager.adapter = adapter
         viewPager.setPageTransformer(true, DepthPageTransformer())
 //        getItemPosition(filePosition, filePath)
-
+        getImage()
         share.setOnClickListener {
             val shareIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -64,29 +79,41 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
             detailViewModel.startFaceActivity(photosList[viewPager.currentItem])
             progressbar.visibility = View.VISIBLE
         }
+        retry.setOnClickListener { onBackPressed() }
+        done.setOnClickListener { uploadImage(file) }
     }
 
-    private fun getItemPosition(position: Int, path: String?) {
-        if (path != null && path != "") {
-            for (file in photosList) {
-                if (file == path) {
-                    viewPager.currentItem = photosList.indexOf(file)
-                }
-            }
-        } else {
-            viewPager.currentItem = position
-        }
+    private fun getImage() {
+        val f = externalCacheDir
+        file = File(f, "image.jpg")
+//        Glide.with(this)
+//                .load(file)
+//                .into(detail_image)
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        detail_image.setImageBitmap(bitmap)
     }
 
-    private fun getImage(position: Int, path: String?) {
-        if (path != null && path != "") {
-            for (file in photosList) {
-                if (file == path) {
-                    val currentItem = photosList.indexOf(file)
-                }
-
-            }
-        }
+    private fun uploadImage(file: File) {
+        retry.visibility = View.GONE
+        done.visibility = View.GONE
+        pb.visibility = View.VISIBLE
+        loading.visibility = View.VISIBLE
+        val req = ImageRequest(ImageRequest.Data("hello"), file)
+        val body: RequestBody = RequestBody.create(MediaType.parse(IMAGE_JPEG), file)
+        val disposable = userMerchantService.upload("https://uploadfiles.io/upload", req.data, body)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe({
+                    pb.visibility = View.GONE
+                    loading.visibility = View.GONE
+                    toast("Uploaded successfully!")
+                    onBackPressed()
+                }, { error ->
+                    pb.visibility = View.GONE
+                    loading.visibility = View.GONE
+                    error.message
+                    toast(error.message!!)
+                })
     }
 
     override fun onOkButtonClicked() {
@@ -108,8 +135,8 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
         val f = File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), APP_NAME)
         val file = f.listFiles()
-            file.sortByDescending { it }
-            file.forEach { list.add(it.path) }
+        file.sortByDescending { it }
+        file.forEach { list.add(it.path) }
         return list
     }
 
@@ -127,9 +154,15 @@ class DetailActivity : AppCompatActivity(), DeletePhotoDialogFragment.OkListener
         progressbar.visibility = View.GONE
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        externalCacheDir.delete()
+    }
+
     override fun onStop() {
         super.onStop()
         progressbar.visibility = View.GONE
+        externalCacheDir.delete()
     }
 
     companion object {

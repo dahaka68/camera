@@ -18,7 +18,6 @@ import com.example.dahaka.mycam.ui.viewModel.GalleryViewModel
 import com.example.dahaka.mycam.util.APP_NAME
 import kotlinx.android.synthetic.main.activity_gallery.*
 import kotlinx.android.synthetic.main.toolbar.*
-import org.koin.android.architecture.ext.viewModel
 import java.io.File
 import android.provider.MediaStore
 import android.content.Intent
@@ -27,7 +26,7 @@ import com.example.dahaka.mycam.util.DATE_FORMAT
 import java.text.SimpleDateFormat
 import java.util.*
 import android.graphics.Bitmap
-
+import org.koin.android.viewmodel.ext.android.viewModel
 
 
 private const val REQUEST_CODE_TAKE_PICTURE = 2

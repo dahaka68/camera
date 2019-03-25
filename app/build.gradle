@@ -50,7 +50,8 @@ dependencies {
     }
 
     // DI
-    implementation "org.koin:koin-android-architecture:0.9.1"
+    implementation 'org.koin:koin-android-viewmodel:1.0.2'
+    implementation "org.koin:koin-android:1.0.2"
 
     //Imageloader
     implementation 'com.github.bumptech.glide:glide:4.7.1'
@@ -71,5 +72,12 @@ dependencies {
     implementation 'com.google.firebase:firebase-core:16.0.0'
 
     kapt 'com.android.databinding:compiler:3.1.4'
+
+    implementation "com.squareup.retrofit2:retrofit:2.4.0"
+    implementation "com.squareup.retrofit2:converter-gson:2.4.0"
+    implementation "com.squareup.retrofit2:adapter-rxjava2:2.4.0"
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.7'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.10.0'
 }
 apply plugin: 'com.google.gms.google-services'

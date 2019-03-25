@@ -47,7 +47,9 @@ class CameraLauncher(val context: Context) {
             val rotatedPic = getRotatedPic(picture, sensorOrientation)
             var out: FileOutputStream? = null
             try {
-                file = getPathForImage()
+//                file = getPathForImage()
+//                file = context.externalCacheDir
+                file = File(context.externalCacheDir, "image.jpg")
                 out = FileOutputStream(file)
                 rotatedPic.compress(Bitmap.CompressFormat.JPEG, 90, out)
                 filePathLiveData.postValue(file.path)

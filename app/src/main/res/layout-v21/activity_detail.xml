@@ -22,19 +22,19 @@
     <include
         android:id="@+id/include"
         layout="@layout/detail_activity_toolbar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/toolbar_size"
         android:layout_marginTop="24dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_height="@dimen/toolbar_size"
-        android:layout_width="0dp" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ProgressBar
         android:id="@+id/progressbar"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="14dp"
         android:indeterminate="true"
         android:theme="@style/AppTheme.WhiteAccent"
@@ -46,4 +46,60 @@
         android:id="@+id/detail_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/colorPrimary"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.12"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/loading"
+            android:text="UPLOADING"
+            android:textColor="@color/blue"
+            android:visibility="gone"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <ProgressBar
+            android:id="@+id/pb"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginStart="16dp"
+            android:background = "@xml/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/retry"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="RETRY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_percent="0.08"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.45" />
+
+    <Button
+        android:id="@+id/done"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="DONE"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.08"
+        app:layout_constraintWidth_percent="0.45" />
 </android.support.constraint.ConstraintLayout>

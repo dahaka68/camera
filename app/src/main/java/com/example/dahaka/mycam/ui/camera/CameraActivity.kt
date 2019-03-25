@@ -23,8 +23,8 @@ import com.example.dahaka.mycam.ui.camera.util.common.CameraSourcePreview
 import com.example.dahaka.mycam.ui.camera.util.common.GraphicOverlay
 import com.example.dahaka.mycam.ui.viewModel.CameraViewModel
 import kotlinx.android.synthetic.main.activity_camera.*
-import org.koin.android.architecture.ext.viewModel
 import org.koin.android.ext.android.inject
+import org.koin.android.viewmodel.ext.android.viewModel
 
 class CameraActivity : AppCompatActivity(), View.OnClickListener {
     private val cameraViewModel by viewModel<CameraViewModel>()
@@ -80,7 +80,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         cameraLauncher.getFilePath().observe(this, Observer { path ->
             path?.let {
                 this.path = path
-                setPreview(path)
+//                setPreview(path)
                 if (path.isNotEmpty()) {
                     cameraViewModel.startDetailScreen(this, path)
                 }
@@ -93,6 +93,7 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener {
         useCamera2api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
         cameraLauncher.useCamera2api(useCamera2api)
         cameraLauncher.createCameraSourceBack(preview, graphicOverlay)
+        back.setOnClickListener { onBackPressed() }
     }
 
     private fun checkSoftwareButtons(): Boolean {

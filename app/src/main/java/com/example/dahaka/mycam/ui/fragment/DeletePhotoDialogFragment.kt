@@ -21,12 +21,12 @@ class DeletePhotoDialogFragment : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val alertDialogBuilder = AlertDialog.Builder(requireContext())
                 .setMessage(R.string.delete_photo)
-                .setPositiveButton(R.string.yes, { _, _ ->
+                .setPositiveButton(R.string.yes) { _, _ ->
                     okListener.onOkButtonClicked()
-                })
-                .setNegativeButton(R.string.no, { dialog, _ ->
+                }
+                .setNegativeButton(R.string.no) { dialog, _ ->
                     dialog?.dismiss()
-                })
+                }
         return alertDialogBuilder.create()
     }
 
