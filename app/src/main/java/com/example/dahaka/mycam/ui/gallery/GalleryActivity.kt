@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.support.transition.ChangeTransform
 import android.support.transition.TransitionManager
+import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -16,8 +17,12 @@ import com.example.dahaka.mycam.ui.adapter.GalleryAdapter
 import com.example.dahaka.mycam.ui.fragment.DeletePhotoDialogFragment
 import com.example.dahaka.mycam.ui.viewModel.GalleryViewModel
 import com.example.dahaka.mycam.util.APP_NAME
+import com.veinhorn.scrollgalleryview.MediaInfo
+import com.veinhorn.scrollgalleryview.ScrollGalleryView
+import com.veinhorn.scrollgalleryview.builder.GallerySettings
 import kotlinx.android.synthetic.main.activity_gallery.*
 import kotlinx.android.synthetic.main.toolbar.*
+import ogbe.ozioma.com.glideimageloader.dsl.DSL.image
 import org.koin.android.architecture.ext.viewModel
 import java.io.File
 
@@ -37,39 +42,63 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gallery)
-        prepareListForAdapter()
-        initAdapter(recycler, defValue)
-        galleryViewModel.getSpanCount().observe(this, Observer { count ->
-            galleryViewModel.setRvPosition(layoutManager.findFirstVisibleItemPosition())
-            reloadAnimationForSpans()
-            initAdapter(recycler, count)
-        })
-        galleryViewModel.getFilesQuantity().observe(this, Observer { files ->
-            if (files == 0) {
-                noPhoto.visibility = View.VISIBLE
-            } else if (files != 0 && noPhoto.visibility == View.VISIBLE) {
-                noPhoto.visibility = View.GONE
-            }
-            prepareListForAdapter()
-            adapter.refreshList(photosList)
-        })
-        changeSpanCount.setOnClickListener {
-            TransitionManager.beginDelayedTransition(toolbarContainer, changeTransform)
-            galleryViewModel.changeSpanCount()
-            toggleRotation(spanImage)
-        }
+//        prepareListForAdapter()
+//        initAdapter(recycler, defValue)
+//        galleryViewModel.getSpanCount().observe(this, Observer { count ->
+//            galleryViewModel.setRvPosition(layoutManager.findFirstVisibleItemPosition())
+//            reloadAnimationForSpans()
+//            initAdapter(recycler, count)
+//        })
+//        galleryViewModel.getFilesQuantity().observe(this, Observer { files ->
+//            if (files == 0) {
+//                noPhoto.visibility = View.VISIBLE
+//            } else if (files != 0 && noPhoto.visibility == View.VISIBLE) {
+//                noPhoto.visibility = View.GONE
+//            }
+////            prepareListForAdapter()
+//            adapter.refreshList(photosList)
+//        })
+//        changeSpanCount.setOnClickListener {
+//            TransitionManager.beginDelayedTransition(toolbarContainer, changeTransform)
+//            galleryViewModel.changeSpanCount()
+//            toggleRotation(spanImage)
+//        }
         fab.setOnClickListener { galleryViewModel.startCameraActivity(this) }
         qrCode.setOnClickListener { galleryViewModel.startBarcodeActivity(this) }
-        recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (dy > 0 && fab.visibility == View.VISIBLE) {
-                    fab.hide()
-                } else if (dy < 0 && fab.visibility != View.VISIBLE) {
-                    fab.show()
-                }
-            }
-        })
+//        recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+//            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+//                super.onScrolled(recyclerView, dx, dy)
+//                if (dy > 0 && fab.visibility == View.VISIBLE) {
+//                    fab.hide()
+//                } else if (dy < 0 && fab.visibility != View.VISIBLE) {
+//                    fab.show()
+//                }
+//            }
+//        })
+        if (getListOfPictures().isNotEmpty()) {
+            val galleryView = ScrollGalleryView
+                    .from(scroll_gallery_view)
+                    .settings(
+                            GallerySettings
+                                    .from(supportFragmentManager)
+                                    .thumbnailSize(200)
+                                    .enableZoom(true)
+                                    .build()
+                    )
+                    .onPageChangeListener(object: ViewPager.OnPageChangeListener {
+                        override fun onPageScrollStateChanged(state: Int) {
+                        }
+
+                        override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                        }
+
+                        override fun onPageSelected(position: Int) {
+                        }
+                    })
+//                .add(image("http://pirate-islands.com/wp-content/uploads/2018/07/07_Dom-Fernando-II_01-636x310.jpg"))
+                    .add(getListOfPictures())
+                    .build()
+        }
     }
 
     override fun onResume() {
@@ -87,10 +116,10 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
         }
     }
 
-    private fun prepareListForAdapter() {
-        photosList.clear()
-        photosList.addAll(getListOfPictures())
-    }
+//    private fun prepareListForAdapter() {
+//        photosList.clear()
+//        photosList.addAll(getListOfPictures())
+//    }
 
     private fun initAdapter(recyclerView: RecyclerView, count: Int?) {
         recyclerView.setHasFixedSize(true)
@@ -120,13 +149,13 @@ class GalleryActivity : AppCompatActivity(), GalleryAdapter.ItemClickListener, D
         recycler.layoutAnimation = AnimationUtils.loadLayoutAnimation(this, R.anim.grid_layout_animation)
     }
 
-    private fun getListOfPictures(): List<String> {
-        val list = mutableListOf<String>()
+    private fun getListOfPictures(): MutableList<MediaInfo> {
+        val list = mutableListOf<MediaInfo>()
         val f = File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), APP_NAME)
         val file = f.listFiles()
-            file.sortByDescending { it }
-            file.forEach { list.add(it.path) }
+        file.sortByDescending { it }
+        file.forEach { list.add(image(it.path)) }
         return list
     }
 }

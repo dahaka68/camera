@@ -7,16 +7,18 @@
     android:animateLayoutChanges="true"
     tools:context=".ui.gallery.GalleryActivity">
 
-    <com.example.dahaka.mycam.ui.camera.util.common.GridRecyclerView
-        android:id="@+id/recycler"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="@dimen/toolbar_size"
-        android:layoutAnimation="@anim/grid_layout_animation"
-        android:scrollbarSize="@dimen/scrollbar_size"
-        android:scrollbarThumbVertical="@drawable/scrollbar_vertical_thumb"
-        android:scrollbars="vertical"
-        app:fastScrollEnabled="false" />
+        android:layout_height="match_parent">
+
+        <com.veinhorn.scrollgalleryview.ScrollGalleryView
+            android:id="@+id/scroll_gallery_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000"
+            android:scrollbarStyle="insideOverlay"
+            android:scrollbarSize="200dp" />
+    </LinearLayout>
 
     <include layout="@layout/toolbar" />
 

@@ -6,11 +6,11 @@ apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'io.fabric'
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     defaultConfig {
         applicationId "com.example.dahaka.mycam"
-        minSdkVersion 16
-        targetSdkVersion 27
+        minSdkVersion 21
+        targetSdkVersion 28
         versionCode 4
         versionName "1.0.3"
         resConfigs "en", "ru"
@@ -46,8 +46,12 @@ dependencies {
         transitive = true
     }
 
+    implementation 'com.veinhorn.scrollgalleryview:library:1.2.8'
+
     // DI
     implementation "org.koin:koin-android-architecture:0.9.1"
+
+    implementation 'com.veinhorn.scrollgalleryview:glide-loader:1.2.8'
 
     //Imageloader
     implementation 'com.github.bumptech.glide:glide:4.7.1'
